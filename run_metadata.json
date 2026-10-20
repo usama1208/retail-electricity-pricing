@@ -1,0 +1,59 @@
+{
+  "engine": "R",
+  "R": "R version 4.5.1 (2025-06-13)",
+  "packages": ["1.17.8", "0.14.2", "4.0.2", "2.30", "1.50"],
+  "input_md5": {
+    "/Users/usamanarejo/Documents/TA - Consumers, Firms and the Environment/Cases/Retail Electricity Pricing/data/ca_electricity_data/bills.csv": "4c7fed394a4a59d1160863a59200df16",
+    "/Users/usamanarejo/Documents/TA - Consumers, Firms and the Environment/Cases/Retail Electricity Pricing/data/ca_electricity_data/households.csv": "ccb9412e62bee278c2d785ef36c8834b",
+    "/Users/usamanarejo/Documents/TA - Consumers, Firms and the Environment/Cases/Retail Electricity Pricing/data/ca_electricity_data/tracts.csv": "f98792accc12d7ca2593a06b0101a219",
+    "/Users/usamanarejo/Documents/TA - Consumers, Firms and the Environment/Cases/Retail Electricity Pricing/data/ca_electricity_data/weather.csv": "9e92c6dbdb685cab6679f73201870b9e"
+  },
+  "primary": {
+    "elasticity": -0.24295708284638248,
+    "p": 0.17999999999999999,
+    "lambda": 79.664237963963217,
+    "baseline_revenue": 22698856.00344656,
+    "new_revenue": 22698856.003446564,
+    "reconciliation": 3.7252902984619141e-09,
+    "delta_kwh": 3711056.7930794419,
+    "kwh_pct": 4.996241341620232,
+    "CS": 705975.41403998865,
+    "delta_tonnes": 723.82202977032659,
+    "climate_damage": 137526.18565636204,
+    "welfare": 409090.87059353065,
+    "profit_change_proxy": -159358.35779008776,
+    "volumetric_revenue": 13408194.602400113,
+    "care_fixed_revenue": 139722,
+    "weight_months": 114868.84999988665
+  },
+  "elasticity_CI": [-0.34506666810327585, -0.14084749758948911],
+  "profit_neutral_proxy": {
+    "elasticity": -0.24295708284638248,
+    "p": 0.17999999999999999,
+    "lambda": 81.051544947450111,
+    "baseline_revenue": 22698856.00344656,
+    "new_revenue": 22858214.361236565,
+    "reconciliation": 1.1175870895385742e-08,
+    "delta_kwh": 3711056.7930794419,
+    "kwh_pct": 4.996241341620232,
+    "CS": 546617.05624987639,
+    "delta_tonnes": 723.82202977032659,
+    "climate_damage": 137526.18565636204,
+    "welfare": 409090.87059353065,
+    "profit_change_proxy": 2.0809238776564598e-08,
+    "volumetric_revenue": 13408194.602400113,
+    "care_fixed_revenue": 139722,
+    "weight_months": 114868.84999988665
+  },
+  "pretrend_p": 0.1926085590855886,
+  "rounding_revenue_gap": -229.19104643538594,
+  "simulation_households": 10971,
+  "simulation_months": 128925,
+  "imputed_spikes_2023": 11,
+  "outlier_threshold_counts": {
+    "10": 352,
+    "20": 352,
+    "50": 352,
+    "100": 352
+  }
+}

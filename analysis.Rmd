@@ -1,0 +1,186 @@
+---
+title: "PG&E residential pricing reform"
+subtitle: "Demand estimation, revenue calibration, and distributional impacts"
+output:
+  html_document:
+    self_contained: true
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    theme: flatly
+    css: style.css
+    code_folding: hide
+params:
+  data_dir: "data/ca_electricity_data"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE)
+if (dir.exists(".R-library")) .libPaths(c(normalizePath(".R-library"), .libPaths()))
+DATA_DIR <- normalizePath(params$data_dir, mustWork=TRUE)
+OUT_DIR <- getwd()
+source("analysis.R", local=knitr::knit_global())
+```
+
+All aggregate outcomes refer to the observed sample. The supplied billing data are synthetic.
+
+
+## Decision and headline results
+
+<div class="callout"><b>$0.18/kWh standard · $0.12/kWh CARE</b><br>Revenue-neutral fixed charges: $6 CARE; `r usd(result$lambda*.65)`, `r usd(result$lambda)`, and `r usd(result$lambda*1.4)` for ascending non-CARE income bands.</div><p>The estimated elasticity is `r sprintf("%.3f", elasticity)`, with a 95% county-clustered interval of [-0.345, -0.141]. On the 2023 PG&amp;E sample, the proposal raises use by `r sprintf("%.2f%%", result$kwh_pct)`, adds `r usd(result$CS)` in net consumer surplus, and raises the emissions proxy by `r fmt(result$delta_tonnes,1)` metric tonnes CO2e. Sample revenue remains `r usd(result$baseline_revenue)`.</p><p><b>The causal checks are mixed.</b> Pre-trends do not reject the parallel-trend benchmark, but the 2021 placebo rejects zero and CARE enrollment is discontinuous at the border in the middle bandwidth. Treat the projections as conditional policy scenarios. Equal revenue also does not preserve profit when incremental supply costs are positive; a separate profit-neutral variant is reported.</p>
+
+
+## Data integrity
+
+<p>The four supplied CSVs are synthetic. The panel grid is complete, but consumption is observed only while an account is connected. Closed months are excluded from demand regressions and billed no fixed charge. No zero filling or interpolation crosses closure blocks.</p>
+
+```{r table-quality, echo=FALSE, results="asis"}
+knitr::kable(quality, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+<p>Normalize tract strings before joining. This extract already has six-digit keys; the defensive repair changes 0 records. All 6,802 tracts use negative distance for PG&amp;E, contrary to the supplied convention. The analysis sets distance = −d and preserves PGE. All joins are validated many-to-one with complete coverage. Weather outside 2015–2023 is unused.</p><p>An isolated observation above 20 times its household median is nulled when neither adjacent month is also extreme and at least one adjacent month is connected. The rule removes `r spikes` data-entry spikes, not large households. Median use above 3,000 kWh/month is a diagnostic flag, not an exclusion. For regressions, flagged spikes remain missing. For the 2023 simulation only, their usage is replaced with the household’s median valid 2023 usage, retaining the connected month and its fixed charge.</p>
+
+
+## Historical tariffs
+
+
+
+```{r table-baseline, echo=FALSE, results="asis"}
+knitr::kable(baseline, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+<p>These supplied tariffs are maintained exactly. CARE receives one-third off the marginal charge only, with no historical fixed-charge discount. The observed enrollment flags determine billing; the approximate 25% enrollment benchmark is not imposed as a sampling weight.</p>
+
+
+## Identification and elasticity
+
+<p>The primary design compares PG&amp;E with SCE over 2015–2020, ending before the fixed-charge increase. The specification is log(kWh) = household FE + year-month FE + β(PGE × post2019) + γHDD/100 + δCDD/100. Household effects absorb time-invariant income, CARE, and utility differences. Year-month effects absorb common seasonality and shocks.</p><div class="callout"><b>Estimated elasticity: `r sprintf("%.3f", elasticity)`</b><br>95% county-clustered normal interval [-0.345, -0.141]. The reduced-form DiD is 0.03106; divide by log(0.22/0.25) = -0.127833. The CARE discount leaves this proportional price change unchanged.</div>
+
+```{r table-model_df, echo=FALSE, results="asis"}
+knitr::kable(model_df, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+<p>Standard errors cluster by county, with finite-sample covariance scaling; intervals use the asymptotic normal approximation. Household and month effects are absorbed with fixest::feols at a 1e−10 tolerance. An explicit county sandwich covariance uses full fixed-effect degrees of freedom and normal intervals. Treatment occurs at the utility level, so county clustering cannot rule out a PG&amp;E-wide confounder; two utilities do not provide many independent policy assignments. Causal interpretation requires parallel untreated trends, no simultaneous differential shock, stable composition conditional on household effects, and no anticipation. The estimate summarizes the first two post-change years and is not a long-run electrification elasticity. CARE versus non-CARE is descriptive only.</p>
+
+
+## Trends, selection, and the fixed-charge check
+
+
+
+```{r plot_usage, echo=FALSE, fig.width=9, fig.height=4.5, out.width="100%"}
+plot_usage
+```
+
+
+
+```{r plot_event, echo=FALSE, fig.width=9, fig.height=4.5, out.width="100%"}
+plot_event
+```
+
+
+
+```{r table-ev, echo=FALSE, results="asis"}
+knitr::kable(ev, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+<p>The joint pre-period Wald statistic is 4.731 (3 degrees of freedom; asymptotic p = 0.1926). Failure to reject is not proof of parallel trends. The 2021 placebo uses 2019–2023, when both utilities’ marginal prices are constant: estimate 0.03826 log points, 95% interval [0.02219, 0.05433]. <b>The placebo rejects zero: usage increases by about 3.9% despite no marginal-price change.</b> This weakens the design as a clean causal elasticity estimate. The pre-2020 elasticity is about half the primary estimate, indicating sensitivity to the post-period window. A fixed fee can affect consumption through income effects or selection, so zero is a useful benchmark, not an identity. The separate connection regression uses all account-months and tests changes in observed connection status; it does not establish that a substantially larger proposed fixed fee leaves connection unchanged.</p>
+
+```{r plot_connection, echo=FALSE, fig.width=9, fig.height=4.5, out.width="100%"}
+plot_connection
+```
+
+
+
+
+## Geographic validation
+
+<p>Distance is oriented positive toward PG&amp;E. Local-linear regressions use a triangular kernel and separate slopes on each side, with tract-clustered uncertainty. Income balance gives each tract one observation. CARE balance and 2018 average log consumption give each observed household one observation. Consumption includes mean HDD and CDD controls. Three prespecified bandwidths show how much the result depends on local support.</p>
+
+```{r table-rd, echo=FALSE, results="asis"}
+knitr::kable(rd, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+
+
+```{r plot_border, echo=FALSE, fig.width=9, fig.height=4.5, out.width="100%"}
+plot_border
+```
+
+<p>The narrowest window has few tracts, making normal intervals fragile. Geographic distance alone does not capture all boundary-segment differences; coordinates needed for segment effects and a formal spatial density assessment are unavailable. At the 0.25-degree bandwidth, CARE enrollment jumps by 29.5 percentage points (95% interval 9.7–49.3). Income intervals include zero across the three windows, but this does not establish balance. The CARE discontinuity and imprecise usage estimates mean the border design does not independently validate the main elasticity. Even with balance, 2018 utility assignment changes both p ($0.25 versus $0.19) and F ($45 versus $50); the border contrast is therefore a corroborating usage comparison, not an independently identified pure marginal-price elasticity.</p>
+
+
+## Proposed tariff and explicit calibration
+
+<p>Use 2023 connected PG&amp;E account-months as the reference: `r fmt(N,0)` households and `r fmt(M,0)` months. Replace 11 corrupted connected-month quantities with within-household 2023 medians. Lower the standard marginal price from $0.22 to <b>$0.18/kWh</b>, with <b>$0.12/kWh for CARE</b>. This closes 28.6% of the gap to $0.08 social marginal cost. The 18.2% price reduction moves meaningfully toward efficient use while limiting fixed-charge recovery and extrapolation beyond the observed 12% cut. It is a policy choice, not an estimated optimum.</p><p>Set CARE F = $6/month. For non-CARE, use tract-income bands below $75,000, $75,000–below $125,000, and $125,000 or more, with relative fixed-charge weights 0.65, 1.00, and 1.40. These bands and weights are transparent design assumptions; they are not FERA eligibility rules. Household income is not observed.</p>
+
+```{r table-tariff, echo=FALSE, results="asis"}
+knitr::kable(tariff, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+<div class="equation">q₁ᵢ = q₀ᵢ (p₁ᵢ / p₀ᵢ)<sup>ε</sup><br>λ = [R₀ − Σ p₁ᵢq₁ᵢ − 6N<sub>CARE months</sub>] / Σ<sub>non-CARE months</sub>wᵢ<br>λ = [`r fmt(result$baseline_revenue,6)` − `r fmt(result$volumetric_revenue,6)` − `r fmt(result$care_fixed_revenue,6)`] / `r fmt(result$weight_months,6)` = `r sprintf("%.12f",result$lambda)`<br>F₁ᵢ = 6 for CARE; λwᵢ otherwise.<br>R₁ − R₀ = `r sprintf("%.12f",result$reconciliation)` dollars (floating-point tolerance &lt; $0.000001).</div><p>CARE’s marginal discount and minimal fixed charge are fully included in this equation. The non-CARE fixed fees fund the resulting shortfall within PG&amp;E; there is no outside subsidy. Calculations retain unrounded fees; cent-rounded posted fees require a small annual reconciliation adjustment to retain exact neutrality. SCE’s tariff is unchanged.</p><p><b>Revenue neutrality and profit neutrality differ.</b> Equal revenue with increased kWh reduces profit whenever private marginal cost is positive. The main proposal satisfies exact revenue equality. The final column gives a separate profit-neutral calibration using the explicitly assumed private-cost proxy below: replace R₀ in the equation with R₀ + c<sub>private</sub>ΔQ. This alternative collects additional revenue and cannot simultaneously satisfy revenue equality. Actual profit neutrality requires PG&amp;E’s private incremental cost data.</p>
+
+
+## Consumption, surplus, and environmental effects
+
+
+
+```{r table-impact, echo=FALSE, results="asis"}
+knitr::kable(impact, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+<p>All totals cover the observed 2023 PG&amp;E sample, including partial-year accounts. Per-household figures divide by distinct connected accounts and are not full-year customer equivalents. Per-connected-month values divide by observed connected months. The unknown utility-specific sample-to-population ratio prevents utility-wide dollar, energy, or emissions totals.</p><div class="equation">ΔCSᵢ = q₀ᵢp₀ᵢ [1 − (p₁ᵢ/p₀ᵢ)<sup>1+ε</sup>] / (1+ε) − (F₁ᵢ − F₀ᵢ)<br>ΔW = Σ[ΔCSᵢ + Δbillᵢ − 0.08 × Δqᵢ].</div><p>Consumer surplus integrates constant-elasticity demand and subtracts the fixed-charge change. It assumes negligible income effects, unchanged connection, and a common elasticity across households. The social-welfare calculation uses the $0.08/kWh inclusive benchmark once; it does not subtract carbon damage again. The fixed charges redistribute payments, while the consumption response changes efficiency.</p>
+
+
+## Distributional effects
+
+<p>Values below are per connected month. Negative bill changes are savings; positive net CS is a consumer gain. Fixed-fee allocation changes affordability across income groups even though aggregate revenue is constant. Larger consumers gain more from lower volumetric prices, and low-use non-CARE households can lose within every income band.</p>
+
+```{r table-dist, echo=FALSE, results="asis"}
+knitr::kable(dist, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+
+
+```{r table-care, echo=FALSE, results="asis"}
+knitr::kable(care, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+
+
+```{r table-cross, echo=FALSE, results="asis"}
+knitr::kable(cross, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+
+
+
+## Sensitivity and implementation limits
+
+
+
+```{r table-sensitivity, echo=FALSE, results="asis"}
+knitr::kable(sensitivity, format="html", digits=4, format.args=list(big.mark=","))
+```
+
+<p>Each scenario recalibrates F to its demand response; the final column instead holds the recommended fixed fees unchanged to expose revenue risk. Statistical intervals omit identification, model, cost, and distributional uncertainty. Rounding each proposed fixed charge to cents changes sample revenue by −$229.19; the exact analytical calibration uses full precision. A billing implementation needs an explicit annual true-up.</p><p>The high-use exclusion regression assesses influence on elasticity while the main proposal retains all persistent users. Such accounts may represent commercial or multi-unit meters; their classification is unverified. A fixed-charge increase may induce disconnection, self-generation, or meter consolidation even when the historical $10 increase does not. This simulation holds these responses at zero and excludes capital investment and electrification adoption. Tract median income can misclassify low-income households living in affluent tracts. Verified income or assistance enrollment is preferable for operational billing.</p>
+
+
+## Cost benchmarks, policy precedent, and interpretation
+
+<p><a href="https://www.next10.org/publications/electricity-rates">Borenstein, Fowlie and Sallee, Designing Electricity Rates for an Equitable Energy Transition (2021)</a> document retail rates two to three times marginal cost. The analysis adopts the requested approximately $0.08/kWh social-cost benchmark, inclusive of carbon, as a simplified scenario input rather than a current audited PG&amp;E procurement cost.</p>
+<p><a href="https://www.epa.gov/egrid/summary-data">EPA eGRID 2023 summary data</a> give CAMX output emissions of 429.983 lb CO2e/MWh. The adopted rounded factor is 430 lb/MWh, or 0.000195045 metric tonnes/kWh. This is an average output factor, not a marginal dispatch rate or a delivered-electricity factor adjusted for losses. Incremental emissions are a scenario proxy.</p>
+<p><a href="https://www.epa.gov/system/files/documents/2023-12/epa_scghg_2023_report_final.pdf">EPA’s 2023 social-cost report, Table ES.1</a> gives $190 per metric tonne CO2 for 2020 emissions in 2020 dollars at a 2% near-term discount rate. The analysis uses this requested historical benchmark, not a claim about current federal policy. Applying it to CO2e is a simplifying approximation. It implies carbon damage of $0.03706/kWh. Subtracting that from $0.08 yields an illustrative private-cost residual of $0.04294/kWh, not an independently measured financial cost. The sources have different vintages; climate dollars are shown separately in 2020 purchasing power and the $0.08 welfare benchmark is not inflation-harmonized.</p>
+<p><a href="https://liob.cpuc.ca.gov/wp-content/uploads/sites/14/2024/06/Energy-Division-Update-to-LIOB-2024-06-26-final.pdf">CPUC’s June 2024 explanation of Decision 24-05-028</a> specifies $6 CARE, $12.08 FERA or eligible affordable-housing customers, and $24.15 for other customers, with rollout scheduled in late 2025 for SCE/SDG&amp;E and early 2026 for PG&amp;E. These figures support tiered fixed charges as a policy precedent. They are not substituted for the supplied historical tariffs or copied as the revenue-recovery requirement.</p>
+<p>Lower marginal prices increase electricity use and the emissions proxy in this simulation, sacrificing near-term electricity conservation. They also reduce the operating cost of EVs and heat pumps and can lower total emissions when electricity displaces gasoline or natural gas. The data contain no equipment or displaced-fuel information, so no net electrification benefit is claimed. Time-varying marginal emissions and adoption data would be needed to quantify it.</p>
+<p>Ramsey pricing offers a complementary approach: recover residual costs with markups inversely related to compensated demand elasticity, subject to equity weights and participation constraints. With common estimated elasticity here, there is no empirical basis for different CARE elasticities or income-based marginal markups. Income-sensitive fixed charges can recover costs with less intensive-margin distortion, but high charges create affordability and connection risks. The proposed partial price reduction balances those concerns without claiming to solve a full Ramsey optimization.</p>
+
+
+## Reproducibility
+
+All estimation, simulation, tables, and figures in this report run in R. Source CSVs are never modified. `analysis.R` contains the full analysis, and `run.R` renders this document. Exact package versions and the R session are saved in `sessionInfo.txt`; input checksums and numerical reconciliation are saved in `run_metadata.json`.
+
+```{r analysis-source, echo=FALSE, results="asis"}
+cat("<details><summary>Full R analysis source</summary><pre>",
+    htmltools::htmlEscape(paste(readLines("analysis.R"), collapse="\n")),
+    "</pre></details>", sep="")
+```

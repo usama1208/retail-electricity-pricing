@@ -1,0 +1,11 @@
+Measure,Count
+Households,40000
+Tracts,6802
+Bill rows,4320000
+Closed-account months,806065
+Isolated spikes nulled,352
+"Persistent high-use households (median >3,000 kWh)",20
+Tract strings changed by normalization,0
+Unmatched households before normalization,0
+Unmatched households after normalization,0
+Tracts with reversed distance sign,6802

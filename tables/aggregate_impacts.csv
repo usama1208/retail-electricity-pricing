@@ -1,0 +1,16 @@
+Metric,Value
+Baseline consumption (kWh),74276972.2143963
+Proposed consumption (kWh),77988029.0074751
+Consumption change (kWh),3711056.79307944
+Consumption change (%),4.99624134162023
+Baseline revenue ($),22698856.0034466
+Proposed revenue ($),22698856.0034466
+Net consumer surplus change ($),705975.414039989
+Net CS per observed household ($),64.3492310673584
+Net CS per connected month ($),5.47586126848934
+Baseline emissions proxy (metric t CO2e),14487.3311811554
+Proposed emissions proxy (metric t CO2e),15211.1532109256
+Emissions change (metric t CO2e),723.822029770327
+Climate damage change (2020 $ proxy),137526.185656362
+Social welfare change ($ benchmark),409090.870593531
+Profit change ($ private-cost proxy),-159358.357790088
